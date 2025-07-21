@@ -1,0 +1,9 @@
+# Ignorar archivos sensibles y temporales
+.env
+__pycache__/
+*.pyc
+*.sqlite3
+db.sqlite3
+media/
+*.log
+.vscode/

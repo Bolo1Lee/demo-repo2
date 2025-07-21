@@ -9,9 +9,20 @@ from dotenv import load_dotenv
 from .prompts import generar_prompt
 from .helpers import limpiar_preguntas_json, guardar_preguntas
 
-# Cargar clave API
+# 🔐 Cargar variables desde .env
 load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+# Leer configuración segura
+api_key = os.getenv("OPENAI_API_KEY")
+model = os.getenv("OPENAI_MODEL", "gpt-4")
+temperature = float(os.getenv("OPENAI_TEMPERATURE", 0.7))
+max_tokens = int(os.getenv("OPENAI_MAX_TOKENS", 3000))
+
+if not api_key:
+    raise ValueError("No se encontró la variable OPENAI_API_KEY en el archivo .env.")
+
+# Inicializar cliente
+client = OpenAI(api_key=api_key)
 
 @login_required
 def pregunta_chatgpt(request):
@@ -25,8 +36,7 @@ def pregunta_chatgpt(request):
         texto = request.POST.get("texto_usuario", "")
         tema_existente = request.POST.get("tema_existente")
         tema_nuevo = request.POST.get("tema_nuevo", "").strip()
-        tipo = request.POST.get("tipo", "clinica")  # tipo de pregunta: 'clinica' o 'conceptual'
-
+        tipo = request.POST.get("tipo", "clinica")  # 'clinica' o 'conceptual'
         cantidad = int(request.POST.get("cantidad", 5))
         if cantidad > 20: cantidad = 20  # límite defensivo
 
@@ -44,13 +54,13 @@ def pregunta_chatgpt(request):
 
             try:
                 completion = client.chat.completions.create(
-                    model="gpt-4",
+                    model=model,
                     messages=[
                         {"role": "system", "content": "Eres un generador de preguntas tipo prueba clínica universitaria en formato JSON."},
                         {"role": "user", "content": prompt}
                     ],
-                    temperature=0.7,
-                    max_tokens=3000
+                    temperature=temperature,
+                    max_tokens=max_tokens
                 )
                 respuesta_raw = completion.choices[0].message.content
 

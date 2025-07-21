@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Modo Práctica</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f8f9fa;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .pregunta-box, form {
+            background-color: white;
+            padding: 20px;
+            border-radius: 6px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .explicacion {
+            margin-top: 20px;
+            background-color: #e9f7ef;
+            border-left: 5px solid #28a745;
+            padding: 10px;
+        }
+
+        .mensaje {
+            font-weight: bold;
+            font-size: 18px;
+            margin-top: 10px;
+        }
+
+        .tema-select {
+            margin-bottom: 20px;
+        }
+
+        button {
+            margin-top: 10px;
+            padding: 10px 18px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .no-preguntas {
+            font-style: italic;
+            color: #666;
+        }
+
+        .spaced-buttons button {
+            margin-right: 10px;
+            background-color: #6c757d;
+        }
+
+        .spaced-buttons button:hover {
+            background-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Modo Práctica</h1>
+
+    <form method="GET" action="">
+        <label for="tema">Selecciona un tema:</label>
+        <select id="tema" name="tema" class="tema-select">
+            <option value="">-- Todos los temas --</option>
+            {% for t in temas %}
+                <option value="{{ t.nombre }}" {% if tema_seleccionado == t.nombre %}selected{% endif %}>{{ t.nombre }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Filtrar</button>
+    </form>
+
+    {% if repeticion %}
+        {% with pregunta=repeticion.pregunta %}
+        <div class="pregunta-box">
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="pregunta_id" value="{{ pregunta.id }}">
+                <input type="hidden" name="tema" value="{{ tema_seleccionado }}">
+                <p><strong>{{ pregunta.pregunta }}</strong></p>
+
+                {% for letra, texto in alternativas %}
+                    <label>
+                        <input type="radio" name="respuesta" value="{{ letra }}"
+                            {% if respuesta_usuario == letra %}checked{% endif %}
+                            {% if mostrar_explicacion %}disabled{% endif %}>
+                            {{ texto }}
+                    </label><br>
+                {% endfor %}
+
+                {% if not mostrar_explicacion %}
+                    <button type="submit">Enviar Respuesta</button>
+                {% endif %}
+            </form>
+
+            {% if mensaje %}
+                <p class="mensaje">{{ mensaje }}</p>
+            {% endif %}
+
+            {% if mostrar_explicacion %}
+                <div class="explicacion">
+                    <strong>Explicación:</strong><br>
+                    {{ pregunta.explicacion }}
+                </div>
+
+                <div class="spaced-buttons">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="pregunta_id" value="{{ pregunta.id }}">
+                        <input type="hidden" name="tema" value="{{ tema_seleccionado }}">
+                        <p><strong>¿Qué tan difícil fue?</strong></p>
+                        <button name="nivel" value="0">Incorrecta</button>
+                        <button name="nivel" value="1">Difícil</button>
+                        <button name="nivel" value="2">Bien</button>
+                        <button name="nivel" value="3">Fácil</button>
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+        {% endwith %}
+    {% else %}
+        <p class="no-preguntas">No hay preguntas disponibles para este tema aún.</p>
+    {% endif %}
+
+</body>
+</html>

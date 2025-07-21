@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Lista de Preguntas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f9f9f9;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        label {
+            margin-right: 10px;
+        }
+
+        select, input[type="text"] {
+            padding: 6px;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 6px 12px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            vertical-align: top;
+        }
+
+        th {
+            background-color: #eaeaea;
+        }
+
+        .editar-link {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .editar-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Lista de Preguntas</h1>
+
+<form method="get">
+    <label for="tema">Filtrar por tema:</label>
+    <select name="tema" id="tema">
+        <option value="">-- Todos --</option>
+        {% for t in temas %}
+            <option value="{{ t.nombre }}" {% if t.nombre == tema_seleccionado %}selected{% endif %}>{{ t.nombre }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="q" style="margin-left: 20px;">Buscar palabra clave:</label>
+    <input type="text" name="q" id="q" value="{{ busqueda_actual|default:'' }}">
+
+    <button type="submit">Filtrar</button>
+</form>
+
+<table>
+    <thead>
+        <tr>
+            <th>Pregunta</th>
+            <th>Alternativas</th>
+            <th>Correcta</th>
+            <th>Explicación</th>
+            <th>Tema</th>
+            <th>Acciones</th> <!-- Nueva columna -->
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in preguntas %}
+        <tr>
+            <td>{{ p.pregunta }}</td>
+            <td>
+                A. {{ p.alternativa_a }}<br>
+                B. {{ p.alternativa_b }}<br>
+                C. {{ p.alternativa_c }}<br>
+                D. {{ p.alternativa_d }}
+            </td>
+            <td>{{ p.respuesta_correcta }}</td>
+            <td>{{ p.explicacion }}</td>
+            <td>{{ p.tema.nombre }}</td>
+            <td>
+                <a class="editar-link" href="{% url 'editar_pregunta' p.id %}">Editar</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="6">No se encontraron preguntas.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+</body>
+</html>

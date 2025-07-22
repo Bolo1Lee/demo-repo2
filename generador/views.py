@@ -63,7 +63,7 @@ Texto base:
 
             try:
                 completion = client.chat.completions.create(
-                    model="gpt-4",
+                    model="gpt-4o",
                     messages=[
                         {"role": "system", "content": "Eres un generador de preguntas tipo prueba clínica universitaria en formato JSON."},
                         {"role": "user", "content": prompt}
@@ -114,7 +114,7 @@ def subir_archivo(request):
 
         try:
             completion = client.chat.completions.create(
-                model="gpt-4",
+                model="gpt-4o",
                 messages=[
                     {"role": "system", "content": "Eres un asistente útil que resume textos."},
                     {"role": "user", "content": contenido}

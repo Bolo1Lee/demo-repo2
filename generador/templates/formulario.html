@@ -84,6 +84,11 @@
     </style>
 </head>
 <body>
+<div style="position: absolute; top: 20px; right: 40px;">
+  <a href="{% url 'home' %}">
+    <button style="background-color: #28a745;">🏠 Volver a inicio</button>
+  </a>
+</div>
 
     <h1>Generador de Preguntas desde Resumen</h1>
 
@@ -137,11 +142,13 @@
                 <td>{{ p.pregunta }}</td>
                 <td>
                     <ul>
-                        {% for alt in p.alternativas %}
-                            <li>{{ alt }}</li>
-                        {% endfor %}
+                        <li><strong>A.</strong> {{ p.alternativa_a }}</li>
+                        <li><strong>B.</strong> {{ p.alternativa_b }}</li>
+                        <li><strong>C.</strong> {{ p.alternativa_c }}</li>
+                        <li><strong>D.</strong> {{ p.alternativa_d }}</li>
                     </ul>
-                </td>
+                </td>   
+
                 <td>{{ p.respuesta_correcta }}</td>
                 <td>{{ p.explicacion }}</td>
             </tr>
@@ -151,6 +158,10 @@
         <h2>Resultado recibido (texto sin procesar):</h2>
         <pre>{{ respuesta_raw }}</pre>
     {% endif %}
+
+    <p style="font-size: 14px; color: gray;">
+    Modelo usado: {{ modelo_usado }}
+    </p>
 
 </body>
 </html>

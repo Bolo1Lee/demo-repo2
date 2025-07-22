@@ -1,6 +1,6 @@
 from django.urls import path
 from .views.home import home
-from .views.gpt import pregunta_chatgpt
+from .views.gpt.vista import pregunta_chatgpt
 from .views.subir_archivos import subir_archivo
 from .views.practica import practicar
 from .views.preguntas import lista_preguntas, editar_pregunta

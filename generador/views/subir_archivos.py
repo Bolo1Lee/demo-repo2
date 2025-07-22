@@ -17,7 +17,7 @@ def subir_archivo(request):
 
         try:
             completion = client.chat.completions.create(
-                model="gpt-4",
+                model="gpt-4o",
                 messages=[
                     {"role": "system", "content": "Eres un asistente útil que resume textos."},
                     {"role": "user", "content": contenido}

@@ -5,6 +5,12 @@
   <title>Subir archivo</title>
 </head>
 <body>
+  <div style="position: absolute; top: 20px; right: 40px;">
+  <a href="{% url 'home' %}">
+    <button style="background-color: #28a745;">🏠 Volver a inicio</button>
+  </a>
+</div>
+
   <h2>Subir archivo de texto</h2>
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}

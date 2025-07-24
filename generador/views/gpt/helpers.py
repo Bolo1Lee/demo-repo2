@@ -5,6 +5,9 @@ from generador.models import Pregunta
 import json
 import re
 from generador.models import Pregunta
+from .prompts import generar_prompt
+
+
 
 def limpiar_preguntas_json(respuesta_raw):
     """
@@ -73,17 +76,44 @@ def guardar_preguntas(preguntas, tema):
             descartadas.append({"razon": "Duplicada", "contenido": item})
             continue
 
+        # Calcular letra de la alternativa correcta
+        respuesta_texto = item.get("respuesta_correcta", "").strip()
+        if respuesta_texto in alternativas:
+            indice = alternativas.index(respuesta_texto)
+            letra_correcta = ["A", "B", "C", "D"][indice]
+        else:
+            letra_correcta = "A"  # fallback de seguridad
+
         nueva = Pregunta(
             pregunta=enunciado,
             alternativa_a=alternativas[0],
             alternativa_b=alternativas[1],
             alternativa_c=alternativas[2],
             alternativa_d=alternativas[3],
-            respuesta_correcta=item["respuesta_correcta"],
-            explicacion=item["explicacion"],
+            respuesta_correcta=letra_correcta,
+            explicacion=item.get("explicacion", ""),
             tema=tema
         )
         nueva.save()
         guardadas.append(nueva)
 
     return guardadas, descartadas
+
+def generar_preguntas_y_guardar(texto, tipo, cantidad, tema_asociado, client, model, temperature, max_tokens):
+    prompt = generar_prompt(texto_usuario=texto, tipo=tipo, cantidad=cantidad)
+
+    completion = client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": "Eres un generador de preguntas tipo prueba clínica universitaria en formato JSON."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=temperature,
+        max_tokens=max_tokens
+    )
+
+    respuesta_raw = completion.choices[0].message.content
+    preguntas_limpias = limpiar_preguntas_json(respuesta_raw)  # ✅ no necesitas importar
+    preguntas_guardadas, _ = guardar_preguntas(preguntas_limpias, tema_asociado)  # ✅ tampoco
+
+    return preguntas_guardadas, respuesta_raw

@@ -4,6 +4,22 @@
     <meta charset="UTF-8">
     <title>Generador de Preguntas</title>
     <style>
+       .loader {
+            display: none;
+        border: 6px solid #f3f3f3;
+        border-top: 6px solid #007bff;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin: 20px auto;
+        }
+
+        @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+        }
+
         body {
             font-family: Arial, sans-serif;
             margin: 40px;
@@ -122,6 +138,9 @@
         <textarea id="texto_usuario" name="texto_usuario" placeholder="Escribe o pega aquí el texto base para generar preguntas..." required>{{ texto_usuario }}</textarea><br><br>
 
         <button type="submit">Generar Preguntas</button>
+
+        <div id="loader" class="loader"></div>
+
     </form>
 
     {% if error_json %}
@@ -162,6 +181,14 @@
     <p style="font-size: 14px; color: gray;">
     Modelo usado: {{ modelo_usado }}
     </p>
+    <script>
+    const form = document.querySelector("form");
+    const loader = document.getElementById("loader");
+
+    form.addEventListener("submit", () => {
+        loader.style.display = "block";
+    });
+    </script>
 
 </body>
 </html>

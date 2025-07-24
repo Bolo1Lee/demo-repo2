@@ -1,125 +1,133 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Lista de Preguntas</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
-            background-color: #f9f9f9;
-        }
+  <meta charset="UTF-8">
+  <title>Lista de Preguntas</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background-color: #f2f2f2;
+    }
 
-        h1 {
-            color: #333;
-        }
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
 
-        form {
-            margin-bottom: 20px;
-        }
+    .volver {
+      text-align: right;
+      margin-bottom: 20px;
+    }
 
-        label {
-            margin-right: 10px;
-        }
+    .tabla-container {
+      max-width: 1200px;
+      margin: auto;
+      overflow-x: auto;
+    }
 
-        select, input[type="text"] {
-            padding: 6px;
-            font-size: 14px;
-        }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
 
-        button {
-            padding: 6px 12px;
-            font-size: 14px;
-            cursor: pointer;
-        }
+    th, td {
+      padding: 16px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+      vertical-align: top;
+    }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            margin-top: 20px;
-        }
+    th {
+      background-color: #007bff;
+      color: white;
+    }
 
-        th, td {
-            padding: 10px;
-            border: 1px solid #ddd;
-            vertical-align: top;
-        }
+    tr:hover {
+      background-color: #f1f1f1;
+    }
 
-        th {
-            background-color: #eaeaea;
-        }
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
 
-        .editar-link {
-            color: #007bff;
-            text-decoration: none;
-            font-weight: bold;
-        }
+    .btn-editar {
+      background-color: #ffc107;
+      color: white;
+      margin-right: 8px;
+    }
 
-        .editar-link:hover {
-            text-decoration: underline;
-        }
-    </style>
+    .btn-eliminar {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    form {
+      display: inline;
+    }
+  </style>
 </head>
 <body>
-<div style="position: absolute; top: 20px; right: 40px;">
-  <a href="{% url 'home' %}">
-    <button style="background-color: #28a745;">🏠 Volver a inicio</button>
-  </a>
-</div>
 
-<h1>Lista de Preguntas</h1>
+  <div class="volver">
+    <a href="{% url 'home' %}">
+      <button class="btn btn-editar">🏠 Volver al Inicio</button>
+    </a>
+  </div>
 
-<form method="get">
-    <label for="tema">Filtrar por tema:</label>
-    <select name="tema" id="tema">
-        <option value="">-- Todos --</option>
-        {% for t in temas %}
-            <option value="{{ t.nombre }}" {% if t.nombre == tema_seleccionado %}selected{% endif %}>{{ t.nombre }}</option>
-        {% endfor %}
-    </select>
+  <h1>📚 Lista de Preguntas</h1>
 
-    <label for="q" style="margin-left: 20px;">Buscar palabra clave:</label>
-    <input type="text" name="q" id="q" value="{{ busqueda_actual|default:'' }}">
-
-    <button type="submit">Filtrar</button>
-</form>
-
-<table>
-    <thead>
+  <div class="tabla-container">
+    <table>
+      <thead>
         <tr>
-            <th>Pregunta</th>
-            <th>Alternativas</th>
-            <th>Correcta</th>
-            <th>Explicación</th>
-            <th>Tema</th>
-            <th>Acciones</th> <!-- Nueva columna -->
+          <th>Pregunta</th>
+          <th>Alternativas</th>
+          <th>Respuesta Correcta</th>
+          <th>Explicación</th>
+          <th>Tema</th>
+          <th>Acciones</th>
         </tr>
-    </thead>
-    <tbody>
-        {% for p in preguntas %}
-        <tr>
-            <td>{{ p.pregunta }}</td>
+      </thead>
+      <tbody>
+        {% for pregunta in preguntas %}
+          <tr>
+            <td>{{ pregunta.pregunta }}</td>
             <td>
-                A. {{ p.alternativa_a }}<br>
-                B. {{ p.alternativa_b }}<br>
-                C. {{ p.alternativa_c }}<br>
-                D. {{ p.alternativa_d }}
+              <strong>A:</strong> {{ pregunta.alternativa_a }}<br>
+              <strong>B:</strong> {{ pregunta.alternativa_b }}<br>
+              <strong>C:</strong> {{ pregunta.alternativa_c }}<br>
+              <strong>D:</strong> {{ pregunta.alternativa_d }}
             </td>
-            <td>{{ p.respuesta_correcta }}</td>
-            <td>{{ p.explicacion }}</td>
-            <td>{{ p.tema.nombre }}</td>
+            <td>{{ pregunta.respuesta_correcta }}</td>
+            <td>{{ pregunta.explicacion }}</td>
+            <td>{{ pregunta.tema.nombre }}</td>
             <td>
-                <a class="editar-link" href="{% url 'editar_pregunta' p.id %}">Editar</a>
+              <a href="{% url 'editar_pregunta' pregunta.id %}">
+                <button class="btn btn-editar">✏️ Editar</button>
+              </a>
+              <form action="{% url 'eliminar_pregunta' pregunta.id %}" method="post" onsubmit="return confirm('¿Estás seguro que deseas eliminar esta pregunta?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-eliminar">🗑️ Eliminar</button>
+              </form>
             </td>
-        </tr>
+          </tr>
         {% empty %}
-        <tr>
-            <td colspan="6">No se encontraron preguntas.</td>
-        </tr>
+          <tr>
+            <td colspan="6" style="text-align: center;">No hay preguntas guardadas.</td>
+          </tr>
         {% endfor %}
-    </tbody>
-</table>
+      </tbody>
+    </table>
+  </div>
 
 </body>
 </html>

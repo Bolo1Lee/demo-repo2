@@ -7,7 +7,7 @@ import json
 from dotenv import load_dotenv
 
 from .prompts import generar_prompt
-from .helpers import limpiar_preguntas_json, guardar_preguntas
+from .helpers import limpiar_preguntas_json, guardar_preguntas, generar_preguntas_y_guardar
 
 # 🔐 Cargar variables desde .env
 load_dotenv()
@@ -57,32 +57,13 @@ def pregunta_chatgpt(request):
                 tema_asociado = None
 
         if texto.strip() and tema_asociado:
-            prompt = generar_prompt(texto_usuario=texto, tipo=tipo, cantidad=cantidad)
-
             try:
-                completion = client.chat.completions.create(
-                    model=model,
-                    messages=[
-                        {"role": "system", "content": "Eres un generador de preguntas tipo prueba clínica universitaria en formato JSON."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    temperature=temperature,
-                    max_tokens=max_tokens
+                preguntas, respuesta_raw = generar_preguntas_y_guardar(
+                    texto, tipo, cantidad, tema_asociado,
+                    client, model, temperature, max_tokens
                 )
-                respuesta_raw = completion.choices[0].message.content
-
-                if not respuesta_raw or not respuesta_raw.strip():
-                    error_json = "La respuesta de OpenAI está vacía o no contiene datos."
-                else:
-                    try:
-                        preguntas_limpias = limpiar_preguntas_json(respuesta_raw)
-                        preguntas_guardadas, _ = guardar_preguntas(preguntas_limpias, tema_asociado)
-                        preguntas = preguntas_guardadas[:cantidad]
-                    except Exception as e:
-                        error_json = f"El JSON generado es inválido: {str(e)}"
-
             except Exception as e:
-                respuesta_raw = f"Error al generar preguntas: {str(e)}"
+                error_json = f"Ocurrió un error: {str(e)}"
 
     return render(request, "formulario.html", {
         "respuesta_raw": respuesta_raw,
@@ -90,6 +71,47 @@ def pregunta_chatgpt(request):
         "error_json": error_json,
         "temas": temas_disponibles,
         "tema_seleccionado_id": tema_existente or "",
+        "texto_usuario": texto,
+        "tipo_seleccionado": tipo,
+        "cantidad_seleccionada": cantidad,
+        "modelo_usado": model,
+    })
+
+@login_required
+def pregunta_desde_documento(request):
+    respuesta_raw = None
+    preguntas = None
+    error_json = None
+
+    texto = request.session.pop("texto_procesado", None)
+    tema_id = request.session.get("tema_procesado")
+
+    tipo = "clinica"
+    cantidad = 5
+    temas_disponibles = Tema.objects.all()
+
+    tema_asociado = Tema.objects.filter(id=tema_id).first() if tema_id else None
+
+    if not texto or not tema_asociado:
+        return render(request, "formulario.html", {
+            "error_json": "No se encontró texto o tema válido. Sube un documento primero.",
+            "temas": temas_disponibles
+        })
+
+    try:
+        preguntas, respuesta_raw = generar_preguntas_y_guardar(
+            texto, tipo, cantidad, tema_asociado,
+            client, model, temperature, max_tokens
+        )
+    except Exception as e:
+        error_json = f"Ocurrió un error al generar preguntas: {str(e)}"
+
+    return render(request, "formulario.html", {
+        "respuesta_raw": respuesta_raw,
+        "preguntas": preguntas,
+        "error_json": error_json,
+        "temas": temas_disponibles,
+        "tema_seleccionado_id": tema_id or "",
         "texto_usuario": texto,
         "tipo_seleccionado": tipo,
         "cantidad_seleccionada": cantidad,

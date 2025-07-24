@@ -1,5 +1,8 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from generador.models import Pregunta, Tema
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+
 
 from django.contrib.auth.decorators import login_required
 
@@ -68,3 +71,10 @@ def editar_pregunta(request, pregunta_id):
         "temas": temas,
         "errores": errores
     })
+
+
+def eliminar_pregunta(request, pregunta_id):
+    if request.method == "POST":
+        pregunta = get_object_or_404(Pregunta, id=pregunta_id)
+        pregunta.delete()
+    return redirect("lista_preguntas")

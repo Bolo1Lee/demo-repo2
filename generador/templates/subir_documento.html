@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Subir Documento</title>
+  <style>
+    .loader {
+  display: none;
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #007bff;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      margin: 40px;
+    }
+
+    .volver-inicio {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
+
+    .form-container {
+      background-color: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+      max-width: 600px;
+      margin: auto;
+    }
+
+    h2 {
+      margin-top: 0;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0 16px 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .resultado {
+      margin-top: 40px;
+      background-color: #e9f7ef;
+      border-left: 6px solid #28a745;
+      padding: 20px;
+      border-radius: 8px;
+    }
+
+    .pregunta {
+      margin-bottom: 24px;
+    }
+
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Botón para volver -->
+  <div class="volver-inicio">
+    <a href="{% url 'home' %}">
+      <button>Volver a Inicio</button>
+    </a>
+  </div>
+
+  <div class="form-container">
+    <h2>Subir Documento para Generar Preguntas</h2>
+
+    {% if error %}
+      <p class="error">{{ error }}</p>
+    {% endif %}
+
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <label for="archivo">Selecciona un archivo (.pdf, .pptx o .txt):</label>
+      <input type="file" name="archivo" accept=".pdf,.ppt,.pptx,.txt" required>
+
+      <label for="tema_existente">Selecciona un tema existente:</label>
+      <select name="tema_existente">
+        <option value="">-- Selecciona un tema --</option>
+        {% for tema in temas %}
+          <option value="{{ tema.id }}">{{ tema.nombre }}</option>
+        {% endfor %}
+      </select>
+
+      <label for="tema_nuevo">O crea un tema nuevo:</label>
+      <input type="text" name="tema_nuevo" placeholder="Ej: Nefrología">
+
+      <label for="cantidad">Cantidad de preguntas (máx 20):</label>
+      <input type="number" name="cantidad" min="1" max="20" value="5" required>
+
+      <label for="tipo">Tipo de pregunta:</label>
+      <select name="tipo">
+        <option value="clinica">Clínica</option>
+        <option value="conceptual">Conceptual</option>
+      </select>
+
+      <button type="submit">Subir y Generar</button>
+
+      <div id="loader" class="loader"></div>
+
+    </form>
+  </div>
+
+  {% if preguntas %}
+    <div class="form-container resultado">
+      <h3>✅ Se generaron {{ preguntas|length }} preguntas:</h3>
+
+      {% for pregunta in preguntas %}
+        <div class="pregunta">
+          <p><strong>{{ pregunta.pregunta }}</strong></p>
+          <ul>
+            <li><strong>A:</strong> {{ pregunta.alternativa_a }}</li>
+            <li><strong>B:</strong> {{ pregunta.alternativa_b }}</li>
+            <li><strong>C:</strong> {{ pregunta.alternativa_c }}</li>
+            <li><strong>D:</strong> {{ pregunta.alternativa_d }}</li>
+          </ul>
+          <p><strong>Respuesta correcta:</strong> {{ pregunta.respuesta_correcta }}</p>
+          <p><strong>Explicación:</strong> {{ pregunta.explicacion }}</p>
+          <hr>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+<script>
+  const form = document.querySelector("form");
+  const loader = document.getElementById("loader");
+
+  form.addEventListener("submit", () => {
+    loader.style.display = "block";
+  });
+</script>
+
+</body>
+</html>

@@ -13,9 +13,16 @@ def preguntas_para_repasar(tema_nombre=None):
 def obtener_o_crear_repeticion(pregunta):
     repeticion, creada = Repeticion.objects.get_or_create(
         pregunta=pregunta,
-        defaults={'proxima_repeticion': timezone.now()}
+        defaults={
+            'proxima_repeticion': timezone.now(),
+            'stability': 1.0,
+            'difficulty': 0.3,
+            'interval': 0.0,
+            'lapses': 0,
+        }
     )
     return repeticion
+
 
 # Registra respuesta con el nivel (0=Incorrecta, 1=Difícil, 2=Bien, 3=Fácil)
 def responder_pregunta(pregunta_id, nivel_respuesta):

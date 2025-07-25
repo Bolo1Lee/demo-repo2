@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load custom_tags %}
 
 {% block title %}Modo Práctica{% endblock %}
 
@@ -20,82 +21,86 @@
 </form>
 
 {% if repeticion %}
-  {% with pregunta=repeticion.pregunta %}
-  <div class="bg-white dark:bg-gray-800 text-gray-900 dark:text-white p-6 rounded-xl shadow max-w-2xl mx-auto">
+<div class="bg-white dark:bg-gray-800 text-gray-900 dark:text-white p-6 rounded-xl shadow max-w-2xl mx-auto">
 
-    <form method="POST">
+  <form method="POST">
+    {% csrf_token %}
+    <input type="hidden" name="pregunta_id" value="{{ repeticion.pregunta.id }}">
+    <input type="hidden" name="tema" value="{{ tema_seleccionado }}">
+
+    <p class="text-gray-900 dark:text-white font-semibold text-lg mb-4">{{ repeticion.pregunta.pregunta }}</p>
+
+    <div class="space-y-3">
+      {% for letra, texto in alternativas %}
+        <label class="block text-gray-800 dark:text-white">
+          <input type="radio" name="respuesta" value="{{ letra }}" {% if respuesta_usuario == letra %}checked{% endif %} {% if mostrar_explicacion %}disabled{% endif %}>
+          {{ letra }}. {{ texto }}
+        </label>
+      {% endfor %}
+    </div>
+
+    {% if not mostrar_explicacion %}
+      <button type="submit" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded">Enviar Respuesta</button>
+    {% endif %}
+  </form>
+
+  {% if mensaje %}
+    <p class="mt-4 font-bold text-lg 
+      {% if "Correcto" in mensaje %}text-green-500 dark:text-green-300
+      {% else %}text-red-500 dark:text-red-300{% endif %}">
+      {{ mensaje }}
+    </p>
+  {% endif %}
+
+  {% if mostrar_explicacion %}
+    <div class="mt-4 p-4 bg-green-100 dark:bg-green-900 text-gray-800 dark:text-white rounded">
+      <strong>Explicación:</strong><br>
+      {{ repeticion.pregunta.explicacion }}
+    </div>
+
+    <form method="POST" class="mt-4">
       {% csrf_token %}
-      <input type="hidden" name="pregunta_id" value="{{ pregunta.id }}">
+      <input type="hidden" name="pregunta_id" value="{{ repeticion.pregunta.id }}">
       <input type="hidden" name="tema" value="{{ tema_seleccionado }}">
+      <p class="mb-2 text-gray-900 dark:text-white"><strong>¿Qué tan difícil fue?</strong></p>
 
-      <p class="text-gray-900 dark:text-white font-semibold text-lg mb-4">{{ pregunta.pregunta }}</p>
-
-      <div class="space-y-3">
-        {% for letra, texto in alternativas %}
-          <label class="block text-gray-800 dark:text-white">
-            <input type="radio" name="respuesta" value="{{ letra }}" {% if respuesta_usuario == letra %}checked{% endif %} {% if mostrar_explicacion %}disabled{% endif %}>
-            {{ letra }}. {{ texto }}
-          </label>
+      <div class="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
+        {% for nivel, texto, clase in niveles_textos %}
+        <div class="boton-dificultad">
+          <button name="nivel" value="{{ nivel }}" class="{{ clase }} text-white px-3 py-2 rounded w-full">{{ texto }}</button>
+          <div class="respuesta-fsrs-preview text-sm mt-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white p-2 rounded">
+            🕒 Se repetirá en {{ fsrs_preview|dict_key:nivel|dict_key:"intervalo" }} días<br>
+            📅 ({{ fsrs_preview|dict_key:nivel|dict_key:"fecha"|date:"l d M, H:i" }})
+          </div>
+        </div>
         {% endfor %}
       </div>
-
-      {% if not mostrar_explicacion %}
-        <button type="submit" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded">Enviar Respuesta</button>
-      {% endif %}
     </form>
+  {% endif %}
 
-    {% if mensaje %}
-      <p class="mt-4 font-bold text-lg 
-        {% if "Correcto" in mensaje %}text-green-500 dark:text-green-300
-        {% else %}text-red-500 dark:text-red-300{% endif %}">
-        {{ mensaje }}
-      </p>
-    {% endif %}
+  <!-- Estadísticas -->
+  <hr class="my-8 border-t border-gray-300 dark:border-gray-600">
+  <div class="mt-10 flex justify-center">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
 
-    {% if mostrar_explicacion %}
-      <div class="mt-4 p-4 bg-green-100 dark:bg-green-900 text-gray-800 dark:text-white rounded">
-        <strong>Explicación:</strong><br>
-        {{ pregunta.explicacion }}
+      <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow w-52">
+        <p class="text-sm text-gray-500 dark:text-gray-300">🧠 Nuevas hoy</p>
+        <h2 class="text-2xl font-bold">{{ tarjetas_nuevas }}</h2>
       </div>
 
-      <form method="POST" class="mt-4">
-        {% csrf_token %}
-        <input type="hidden" name="pregunta_id" value="{{ pregunta.id }}">
-        <input type="hidden" name="tema" value="{{ tema_seleccionado }}">
-        <p class="mb-2 text-gray-900 dark:text-white"><strong>¿Qué tan difícil fue?</strong></p>
-        <div class="flex gap-2 flex-wrap">
-          <button name="nivel" value="0" class="bg-red-500 text-white px-3 py-2 rounded">Incorrecta</button>
-          <button name="nivel" value="1" class="bg-yellow-500 text-white px-3 py-2 rounded">Difícil</button>
-          <button name="nivel" value="2" class="bg-blue-500 text-white px-3 py-2 rounded">Bien</button>
-          <button name="nivel" value="3" class="bg-green-600 text-white px-3 py-2 rounded">Fácil</button>
-        </div>
-      </form>
-
-      <!-- Estadísticas -->
-      <hr class="my-8 border-t border-gray-300 dark:border-gray-600">
-      <div class="mt-10 flex justify-center">
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-
-          <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow w-52">
-            <p class="text-sm text-gray-500 dark:text-gray-300">🧠 Nuevas hoy</p>
-            <h2 class="text-2xl font-bold">{{ tarjetas_nuevas }}</h2>
-          </div>
-
-          <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow w-52">
-            <p class="text-sm text-gray-500 dark:text-gray-300">🔁 Para repasar</p>
-            <h2 class="text-2xl font-bold">{{ tarjetas_para_repasar }}</h2>
-          </div>
-
-          <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow w-52">
-            <p class="text-sm text-gray-500 dark:text-gray-300">✅ Estudiadas hoy</p>
-            <h2 class="text-2xl font-bold">{{ total_estudiadas }}</h2>
-          </div>
-
-        </div>
+      <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow w-52">
+        <p class="text-sm text-gray-500 dark:text-gray-300">🔁 Para repasar</p>
+        <h2 class="text-2xl font-bold">{{ tarjetas_para_repasar }}</h2>
       </div>
-    {% endif %}
+
+      <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow w-52">
+        <p class="text-sm text-gray-500 dark:text-gray-300">✅ Estudiadas hoy</p>
+        <h2 class="text-2xl font-bold">{{ total_estudiadas }}</h2>
+      </div>
+
+    </div>
   </div>
-  {% endwith %}
+</div>
 {% else %}
   <p class="italic text-gray-600 dark:text-gray-300">No hay preguntas disponibles para este tema aún.</p>
 {% endif %}

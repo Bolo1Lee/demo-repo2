@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from datetime import timedelta
+from django.contrib.auth.models import User
 
 class Tema(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
@@ -21,8 +22,6 @@ class Pregunta(models.Model):
     def __str__(self):
         return self.pregunta[:80] + "..."
 
-
-
 class Repeticion(models.Model):
     RESPUESTA_CHOICES = [
         (0, 'Incorrecta'),
@@ -37,24 +36,58 @@ class Repeticion(models.Model):
     nivel_respuesta = models.IntegerField(choices=RESPUESTA_CHOICES, default=0)
     fecha_ultima_respuesta = models.DateTimeField(null=True, blank=True)
 
+    # FSRS nuevos campos
+    stability = models.FloatField(default=1.0)
+    difficulty = models.FloatField(default=0.3)
+    interval = models.FloatField(default=0.0)  # en días
+    lapses = models.IntegerField(default=0)
 
     def actualizar_repeticion(self, nivel):
+        """
+        nivel:
+            0 = incorrecta
+            1 = difícil
+            2 = bien
+            3 = fácil
+        """
+        import math
         ahora = timezone.now()
+
+        # Parámetros FSRS simplificado
+        alpha = 0.4
+        beta = 0.3
+        gamma = 0.05
+        delta = 0.05
+        theta = 1
+        target_retrievability = 0.9
+
+        # Calcular t (días desde última revisión)
+        if self.fecha_ultima_respuesta:
+            t = (ahora - self.fecha_ultima_respuesta).days
+            t = max(t, 0.01)  # evitar división por cero
+        else:
+            t = 0.01
+        r = math.exp(-theta * t / self.stability)
+
         if nivel == 0:
-            self.proxima_repeticion = ahora + timedelta(minutes=1)
-        elif nivel == 1:
-            self.proxima_repeticion = ahora + timedelta(minutes=5)
-        elif nivel == 2:
-            self.proxima_repeticion = ahora + timedelta(minutes=10)
-        elif nivel == 3:
-            self.proxima_repeticion = ahora + timedelta(days=1)
+            # Fallo
+            self.stability *= (1 - beta * r * self.difficulty)
+            self.difficulty = min(1.0, self.difficulty + delta * r)
+            self.lapses += 1
+        else:
+            # Acierto
+            self.stability *= (1 + alpha * (1 - r) * (1 - self.difficulty))
+            self.difficulty = max(0.0, self.difficulty - gamma * (1 - r))
+
+        # Nuevo intervalo
+        self.interval = self.stability * math.log(1 / (1 - target_retrievability))
+        self.proxima_repeticion = ahora + timedelta(days=self.interval)
+
         self.nivel_respuesta = nivel
         self.save()
 
     def __str__(self):
         return f"{self.pregunta} - Repetir en: {self.proxima_repeticion.strftime('%Y-%m-%d %H:%M')}"
-
-from django.contrib.auth.models import User  # Asegúrate de tener esto al inicio si no lo tienes
 
 class Documento(models.Model):
     archivo = models.FileField(upload_to='documentos/')

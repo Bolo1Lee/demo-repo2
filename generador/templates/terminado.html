@@ -1,39 +1,27 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Has terminado!</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
-            background-color: #f0f8ff;
-            text-align: center;
-        }
+{% extends "base.html" %}
 
-        .mensaje {
-            background-color: #e0ffe0;
-            padding: 30px;
-            border-radius: 10px;
-            display: inline-block;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-        }
+{% block title %}¡Práctica completada!{% endblock %}
 
-        a {
-            display: inline-block;
-            margin-top: 20px;
-            color: #007bff;
-            text-decoration: none;
-        }
-    </style>
-</head>
-<body>
+{% block page_title %}🎉 ¡Felicidades{% endblock %}
 
-    <div class="mensaje">
-        <h1>¡Felicidades!🎉</h1>
-        <p>No hay más preguntas para practicar por ahora.</p>
-        <a href="/">Volver al inicio</a>
-    </div>
+{% block boton_derecha %}
+<a href="{% url 'home' %}" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded flex items-center gap-2 w-fit mt-2">
+  🏠 Volver al Inicio
+</a>
+{% endblock %}
 
-</body>
-</html>
+{% block content %}
+
+<div class="max-w-xl mx-auto bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-100 p-8 rounded-lg shadow text-center">
+  <h1 class="text-3xl font-bold mb-4">🎉 ¡Felicidades!</h1>
+  <p class="text-lg mb-4">Has completado todas las preguntas por ahora.</p>
+  <p class="text-base mb-6 text-gray-700 dark:text-gray-300">Recuerda que las preguntas se volverán a mostrar cuando toque repetirlas según tu ritmo de estudio.</p>
+  
+  <p class="text-xl font-semibold text-green-800 dark:text-green-200 mb-8"> Cada vez estás más cerca del éxito, ¡sigue así! </p>
+
+  <a href="{% url 'home' %}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded shadow text-lg transition">
+    🏁 Volver al Inicio
+  </a>
+</div>
+
+{% endblock %}

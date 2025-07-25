@@ -23,6 +23,28 @@ def responder_pregunta(pregunta_id, nivel_respuesta):
         pregunta = Pregunta.objects.get(id=pregunta_id)
         repeticion = obtener_o_crear_repeticion(pregunta)
         repeticion.actualizar_repeticion(nivel_respuesta)
+        repeticion.fecha_ultima_respuesta = timezone.now()  # <--- NUEVO
+        repeticion.save()
         return True
     except Pregunta.DoesNotExist:
         return False
+    
+
+def obtener_estadisticas_anki(tema_nombre=None):
+    ahora = timezone.now()
+    hoy = ahora.date()
+
+    tarjetas_nuevas = Pregunta.objects.filter(repeticion__isnull=True)
+    tarjetas_repasar = Repeticion.objects.filter(proxima_repeticion__lte=ahora)
+    tarjetas_estudiadas_hoy = Repeticion.objects.filter(fecha_ultima_respuesta__date=hoy)
+
+    if tema_nombre:
+        tarjetas_nuevas = tarjetas_nuevas.filter(tema__nombre=tema_nombre)
+        tarjetas_repasar = tarjetas_repasar.filter(pregunta__tema__nombre=tema_nombre)
+        tarjetas_estudiadas_hoy = tarjetas_estudiadas_hoy.filter(pregunta__tema__nombre=tema_nombre)
+
+    return {
+        "tarjetas_nuevas": tarjetas_nuevas.count(),
+        "tarjetas_para_repasar": tarjetas_repasar.count(),
+        "total_estudiadas": tarjetas_estudiadas_hoy.count(),
+    }

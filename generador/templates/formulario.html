@@ -1,194 +1,130 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Generador de Preguntas</title>
-    <style>
-       .loader {
-            display: none;
-        border: 6px solid #f3f3f3;
-        border-top: 6px solid #007bff;
-        border-radius: 50%;
-        width: 50px;
-        height: 50px;
-        animation: spin 1s linear infinite;
-        margin: 20px auto;
-        }
+{% extends "base.html" %}
 
-        @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-        }
+{% block title %}Generador de Preguntas{% endblock %}
 
-        body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
-            background-color: #f8f9fa;
-        }
+{% block content %}
+<div class="max-w-5xl mx-auto p-6">
+  
+  <!-- Título y botón -->
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">✨ Generador de Preguntas</h1>
+    <a href="{% url 'home' %}" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded flex items-center gap-2 w-fit">
+      🏠 Volver al Inicio
+    </a>
+  </div>
 
-        h1 {
-            color: #333;
-        }
+  <form method="POST" class="space-y-6" onsubmit="mostrarLoader()">
+    {% csrf_token %}
 
-        form {
-            margin-bottom: 30px;
-        }
+    <!-- Tema existente -->
+    <div>
+      <label for="tema_existente" class="block font-semibold mb-1">Seleccionar tema:</label>
+      <select name="tema_existente" id="tema_existente"
+        class="w-full p-2 border rounded bg-white dark:bg-gray-800 dark:border-gray-700">
+        <option value="">-- Escoge un tema existente --</option>
+        {% for t in temas %}
+          <option value="{{ t.id }}" {% if t.id|stringformat:"s" == tema_seleccionado_id %}selected{% endif %}>{{ t.nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
 
-        textarea {
-            width: 100%;
-            height: 300px;
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            resize: vertical;
-        }
+    <!-- Tema nuevo -->
+    <div>
+      <label for="tema_nuevo" class="block font-semibold mb-1">... o crear uno nuevo:</label>
+      <input type="text" name="tema_nuevo" id="tema_nuevo" placeholder="Ej: Cardiología"
+        class="w-full p-2 border rounded bg-white dark:bg-gray-800 dark:border-gray-700" />
+    </div>
 
-        select, input[type="text"] {
-            padding: 10px;
-            font-size: 16px;
-            margin-bottom: 10px;
-            width: 100%;
-            box-sizing: border-box;
-        }
+    <!-- Tipo pregunta -->
+    <div>
+      <label for="tipo_pregunta" class="block font-semibold mb-1">Tipo de pregunta:</label>
+      <select name="tipo_pregunta" id="tipo_pregunta"
+        class="w-full p-2 border rounded bg-white dark:bg-gray-800 dark:border-gray-700">
+        <option value="clinica" {% if tipo_seleccionado == "clinica" %}selected{% endif %}>Clínica</option>
+        <option value="conceptual" {% if tipo_seleccionado == "conceptual" %}selected{% endif %}>Conceptual</option>
+      </select>
+    </div>
 
-        button {
-            background-color: #007bff;
-            color: white;
-            padding: 12px 24px;
-            font-size: 16px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-        }
+    <!-- Cantidad -->
+    <div>
+      <label for="cantidad" class="block font-semibold mb-1">Cantidad de preguntas:</label>
+      <select name="cantidad" id="cantidad"
+        class="w-full p-2 border rounded bg-white dark:bg-gray-800 dark:border-gray-700">
+        <option value="5" {% if cantidad_seleccionada == 5 %}selected{% endif %}>5</option>
+        <option value="10" {% if cantidad_seleccionada == 10 %}selected{% endif %}>10</option>
+      </select>
+    </div>
 
-        button:hover {
-            background-color: #0056b3;
-        }
+    <!-- Texto base -->
+    <div>
+      <label for="texto_usuario" class="block font-semibold mb-1">Pega aquí tu resumen o contenido:</label>
+      <textarea id="texto_usuario" name="texto_usuario" rows="10" required
+        class="w-full p-4 border rounded bg-white dark:bg-gray-800 dark:border-gray-700 resize-y"
+        placeholder="Escribe o pega aquí el texto base para generar preguntas...">{{ texto_usuario }}</textarea>
+    </div>
 
-        pre {
-            background-color: #f1f1f1;
-            padding: 15px;
-            border-radius: 6px;
-            overflow-x: auto;
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
+    <!-- Botón + loader -->
+    <div class="flex items-center gap-4">
+      <button type="submit"
+        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded shadow">
+        Generar Preguntas
+      </button>
+      <div id="loader" class="hidden animate-spin rounded-full h-8 w-8 border-t-4 border-blue-500 border-solid"></div>
+    </div>
+  </form>
 
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            background-color: white;
-            margin-top: 20px;
-        }
+  {% if error_json %}
+    <div class="mt-6 text-red-600 font-semibold">{{ error_json }}</div>
+  {% endif %}
 
-        th, td {
-            border: 1px solid #ccc;
-            padding: 12px;
-            text-align: left;
-        }
+  {% if preguntas %}
+    <div class="mt-10">
+      <h2 class="text-xl font-bold mb-4">📋 Preguntas generadas</h2>
+      <div class="overflow-x-auto">
+        <table class="min-w-full border rounded bg-white dark:bg-gray-800">
+          <thead class="bg-blue-600 text-white">
+            <tr>
+              <th class="px-4 py-2 text-left">Pregunta</th>
+              <th class="px-4 py-2 text-left">Alternativas</th>
+              <th class="px-4 py-2 text-left">Correcta</th>
+              <th class="px-4 py-2 text-left">Explicación</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in preguntas %}
+              <tr class="border-t dark:border-gray-700">
+                <td class="px-4 py-2">{{ p.pregunta }}</td>
+                <td class="px-4 py-2">
+                  <ul class="list-disc ml-4">
+                    <li><strong>A:</strong> {{ p.alternativa_a }}</li>
+                    <li><strong>B:</strong> {{ p.alternativa_b }}</li>
+                    <li><strong>C:</strong> {{ p.alternativa_c }}</li>
+                    <li><strong>D:</strong> {{ p.alternativa_d }}</li>
+                  </ul>
+                </td>
+                <td class="px-4 py-2 font-bold">{{ p.respuesta_correcta }}</td>
+                <td class="px-4 py-2">{{ p.explicacion }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% elif respuesta_raw %}
+    <div class="mt-10">
+      <h2 class="text-xl font-bold mb-2">📄 Respuesta cruda de GPT</h2>
+      <pre class="bg-gray-100 dark:bg-gray-700 p-4 rounded text-sm whitespace-pre-wrap">{{ respuesta_raw }}</pre>
+    </div>
+  {% endif %}
 
-        th {
-            background-color: #e9ecef;
-        }
-
-        .error {
-            color: red;
-            font-weight: bold;
-            margin-top: 20px;
-        }
-    </style>
-</head>
-<body>
-<div style="position: absolute; top: 20px; right: 40px;">
-  <a href="{% url 'home' %}">
-    <button style="background-color: #28a745;">🏠 Volver a inicio</button>
-  </a>
+  {% if modelo_usado %}
+    <p class="mt-4 text-sm text-gray-500 dark:text-gray-400">Modelo usado: {{ modelo_usado }}</p>
+  {% endif %}
 </div>
 
-    <h1>Generador de Preguntas desde Resumen</h1>
-
-    <form method="POST">
-        {% csrf_token %}
-
-        <label for="tema_existente"><strong>Seleccionar tema:</strong></label><br>
-        <select name="tema_existente" id="tema_existente">
-            <option value="">-- Escoge un tema existente --</option>
-            {% for t in temas %}
-                <option value="{{ t.id }}" {% if t.id|stringformat:"s" == tema_seleccionado_id %}selected{% endif %}>{{ t.nombre }}</option>
-            {% endfor %}
-        </select><br>
-
-        <label for="tema_nuevo"><strong>... o crear uno nuevo:</strong></label><br>
-        <input type="text" name="tema_nuevo" id="tema_nuevo" placeholder="Ej: Cardiología"><br><br>
-
-        <label for="tipo_pregunta"><strong>Tipo de pregunta:</strong></label><br>
-        <select name="tipo_pregunta" id="tipo_pregunta">
-            <option value="clinica" {% if tipo_seleccionado == "clinica" %}selected{% endif %}>Clínica</option>
-             <option value="conceptual" {% if tipo_seleccionado == "conceptual" %}selected{% endif %}>Conceptual</option>
-        </select><br>
-
-        <label for="cantidad"><strong>Cantidad de preguntas:</strong></label><br>
-        <select name="cantidad" id="cantidad">
-            <option value="5" {% if cantidad_seleccionada == 5 %}selected{% endif %}>5</option>
-            <option value="10" {% if cantidad_seleccionada == 10 %}selected{% endif %}>10</option>
-        </select><br>
-
-        <label for="texto_usuario"><strong>Pega aquí tu resumen o contenido:</strong></label><br><br>
-        <textarea id="texto_usuario" name="texto_usuario" placeholder="Escribe o pega aquí el texto base para generar preguntas..." required>{{ texto_usuario }}</textarea><br><br>
-
-        <button type="submit">Generar Preguntas</button>
-
-        <div id="loader" class="loader"></div>
-
-    </form>
-
-    {% if error_json %}
-        <div class="error">{{ error_json }}</div>
-    {% endif %}
-
-    {% if preguntas %}
-        <h2>Preguntas generadas:</h2>
-        <table>
-            <tr>
-                <th>Pregunta</th>
-                <th>Alternativas</th>
-                <th>Respuesta Correcta</th>
-                <th>Explicación</th>
-            </tr>
-            {% for p in preguntas %}
-            <tr>
-                <td>{{ p.pregunta }}</td>
-                <td>
-                    <ul>
-                        <li><strong>A.</strong> {{ p.alternativa_a }}</li>
-                        <li><strong>B.</strong> {{ p.alternativa_b }}</li>
-                        <li><strong>C.</strong> {{ p.alternativa_c }}</li>
-                        <li><strong>D.</strong> {{ p.alternativa_d }}</li>
-                    </ul>
-                </td>   
-
-                <td>{{ p.respuesta_correcta }}</td>
-                <td>{{ p.explicacion }}</td>
-            </tr>
-            {% endfor %}
-        </table>
-    {% elif respuesta_raw %}
-        <h2>Resultado recibido (texto sin procesar):</h2>
-        <pre>{{ respuesta_raw }}</pre>
-    {% endif %}
-
-    <p style="font-size: 14px; color: gray;">
-    Modelo usado: {{ modelo_usado }}
-    </p>
-    <script>
-    const form = document.querySelector("form");
-    const loader = document.getElementById("loader");
-
-    form.addEventListener("submit", () => {
-        loader.style.display = "block";
-    });
-    </script>
-
-</body>
-</html>
+<script>
+  function mostrarLoader() {
+    document.getElementById("loader").classList.remove("hidden");
+  }
+</script>
+{% endblock %}

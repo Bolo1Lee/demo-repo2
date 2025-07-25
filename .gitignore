@@ -7,3 +7,13 @@ db.sqlite3
 media/
 *.log
 .vscode/
+media/
+*.pdf
+# node.js / Tailwind
+node_modules/
+*.log
+
+# Django media
+media/
+documentos/
+*.pdf

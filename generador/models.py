@@ -35,6 +35,8 @@ class Repeticion(models.Model):
     fecha_revisada = models.DateTimeField(auto_now=True)
     proxima_repeticion = models.DateTimeField(default=timezone.now)
     nivel_respuesta = models.IntegerField(choices=RESPUESTA_CHOICES, default=0)
+    fecha_ultima_respuesta = models.DateTimeField(null=True, blank=True)
+
 
     def actualizar_repeticion(self, nivel):
         ahora = timezone.now()

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}Mi App{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class'
+    };
+  </script>
+</head>
+
+<body class="bg-white text-gray-900 dark:bg-gray-900 dark:text-white transition min-h-screen">
+
+  <!-- Header común para todas las páginas -->
+  <header class="flex justify-between items-start px-6 pt-4">
+    <div>
+      <h1 class="text-2xl font-bold">
+        {% block page_title %}{% endblock %}
+      </h1>
+      <!-- Botón de modo noche alineado a la izquierda -->
+      <button onclick="toggleModoNoche()" id="modoBtn"
+        class="mt-2 bg-gray-800 text-white px-4 py-2 rounded transition-all">
+        🌙 Modo oscuro
+      </button>
+    </div>
+
+    <!-- Botón de ir al inicio (opcional) -->
+    {% block boton_derecha %}{% endblock %}
+  </header>
+
+  <!-- Script Modo Noche -->
+  <script>
+    const html = document.documentElement;
+    const btn = document.getElementById('modoBtn');
+
+    function aplicarModoInicial() {
+      const tema = localStorage.getItem("tema");
+      if (tema === "oscuro") {
+        html.classList.add("dark");
+        btn.innerHTML = "🌙 Modo oscuro";
+      } else {
+        html.classList.remove("dark");
+        btn.innerHTML = "🌞 Modo claro";
+      }
+    }
+
+    function toggleModoNoche() {
+      const activado = html.classList.toggle("dark");
+      localStorage.setItem("tema", activado ? "oscuro" : "claro");
+      btn.innerHTML = activado ? "🌙 Modo oscuro" : "🌞 Modo claro";
+    }
+
+    aplicarModoInicial();
+  </script>
+
+  <main class="container mx-auto px-4 py-6">
+    {% block content %}{% endblock %}
+  </main>
+
+</body>
+</html>

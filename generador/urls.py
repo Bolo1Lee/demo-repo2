@@ -10,6 +10,7 @@ from generador.views.subir_archivos.views import subir_documento
 from generador.views.gpt.vista import pregunta_desde_documento
 
 
+from django.shortcuts import render
 
 
 urlpatterns = [
@@ -24,7 +25,9 @@ urlpatterns = [
     path('practicar/', anki_view, name='practicar'),
     path ("subir/", subir_documento, name="subir_documento"),
     path("pregunta-desde-doc/", pregunta_desde_documento, name="pregunta_desde_documento"),
-    
+   
+    path("testmodo/", lambda r: render(r, "test_modo_noche.html")),
+
 
 ]
 

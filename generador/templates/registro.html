@@ -1,6 +1,39 @@
-<h2>Crear cuenta</h2>
-<form method="POST">
+{% extends "base.html" %}
+
+{% block title %}Registrarse{% endblock %}
+
+{% block page_title %}📝 Crear Cuenta{% endblock %}
+
+{% block boton_derecha %}
+<a href="{% url 'home' %}" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded flex items-center gap-2 w-fit mt-2">
+  🏠 Volver al Inicio
+</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="max-w-md mx-auto bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md">
+  <h2 class="text-2xl font-bold text-center text-gray-900 dark:text-white mb-6">🚀 ¡Comienza a estudiar con nosotros!</h2>
+  <p class="text-center text-sm text-gray-600 dark:text-gray-300 mb-6">Crea una cuenta para acceder a tus preguntas, repasos y progreso personalizado.</p>
+
+  <form method="POST" class="space-y-6">
     {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Registrarse</button>
-</form>
+    {% for field in form %}
+      <div>
+        <label for="{{ field.id_for_label }}" class="block font-semibold text-sm text-gray-700 dark:text-gray-300 mb-1">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}
+          <p class="text-sm text-red-500 mt-1">{{ field.errors|striptags }}</p>
+        {% endif %}
+      </div>
+    {% endfor %}
+
+    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded shadow">
+      ✨ Crear cuenta
+    </button>
+  </form>
+
+  <p class="text-xs text-gray-400 mt-6 text-center">¿Ya tienes una cuenta? Inicia sesión desde la página principal.</p>
+</div>
+
+{% endblock %}

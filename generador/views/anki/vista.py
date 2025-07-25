@@ -1,15 +1,19 @@
 from django.shortcuts import render, redirect
 from django.utils import timezone
-from .logica import preguntas_para_repasar, responder_pregunta, obtener_o_crear_repeticion
+from .logica import preguntas_para_repasar, responder_pregunta, obtener_o_crear_repeticion, obtener_estadisticas_anki
 from generador.models import Pregunta, Tema, Repeticion
 import random
 from django.urls import reverse
 from django.http import HttpResponseRedirect
 
+
 def anki_view(request):
     temas = Tema.objects.all()
     tema_seleccionado = request.GET.get("tema") or request.POST.get("tema")
     ahora = timezone.now()
+
+    # Obtener estadísticas actualizadas
+    estadisticas = obtener_estadisticas_anki(tema_seleccionado)
 
     repetidas = preguntas_para_repasar(tema_seleccionado)
 
@@ -28,7 +32,6 @@ def anki_view(request):
            ('D', pregunta.alternativa_d),
         ]
 
-
         # Si viene un nivel de dificultad, actualiza y pasa a siguiente pregunta
         if 'nivel' in request.POST:
             nivel = int(request.POST.get('nivel'))
@@ -41,7 +44,6 @@ def anki_view(request):
         mensaje = "✅ ¡Correcto!" if correcta else f"❌ Incorrecto. La respuesta correcta era {pregunta.respuesta_correcta}"
         mostrar_explicacion = True
 
-        # Trae la repetición activa para esa pregunta
         repeticion = obtener_o_crear_repeticion(pregunta)
 
         return render(request, "practicar.html", {
@@ -53,8 +55,10 @@ def anki_view(request):
                "respuesta_usuario": respuesta_usuario,
                "mostrar_explicacion": mostrar_explicacion,
                "mensaje": mensaje,
-               })
-
+               "tarjetas_nuevas": estadisticas["tarjetas_nuevas"],
+               "tarjetas_para_repasar": estadisticas["tarjetas_para_repasar"],
+               "total_estudiadas": estadisticas["total_estudiadas"],
+        })
 
     # Mostrar siguiente pregunta
     if repetidas.exists():
@@ -70,9 +74,11 @@ def anki_view(request):
         else:
             return render(request, 'terminado.html', {
                 'temas': temas,
-                'tema_seleccionado': tema_seleccionado
+                'tema_seleccionado': tema_seleccionado,
+                "tarjetas_nuevas": estadisticas["tarjetas_nuevas"],
+                "tarjetas_para_repasar": estadisticas["tarjetas_para_repasar"],
+                "total_estudiadas": estadisticas["total_estudiadas"],
             })
-
 
     alternativas = [
         ('A', repeticion.pregunta.alternativa_a),
@@ -81,13 +87,15 @@ def anki_view(request):
         ('D', repeticion.pregunta.alternativa_d),
     ]
     return render(request, "practicar.html", {
-    "temas": temas,
-    "tema_seleccionado": tema_seleccionado,
-    "repeticion": repeticion,
-    "alternativas": alternativas,
-    "pregunta_resuelta": True,
-    "respuesta_usuario": respuesta_usuario,
-    "mostrar_explicacion": mostrar_explicacion,
-    "mensaje": mensaje,
-})
-
+        "temas": temas,
+        "tema_seleccionado": tema_seleccionado,
+        "repeticion": repeticion,
+        "alternativas": alternativas,
+        "pregunta_resuelta": True,
+        "respuesta_usuario": respuesta_usuario,
+        "mostrar_explicacion": mostrar_explicacion,
+        "mensaje": mensaje,
+        "tarjetas_nuevas": estadisticas["tarjetas_nuevas"],
+        "tarjetas_para_repasar": estadisticas["tarjetas_para_repasar"],
+        "total_estudiadas": estadisticas["total_estudiadas"],
+    })

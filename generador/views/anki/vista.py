@@ -45,8 +45,8 @@ def anki_view(request):
     tema_seleccionado = request.GET.get("tema") or request.POST.get("tema")
     ahora = timezone.now()
 
-    estadisticas = obtener_estadisticas_anki(tema_seleccionado)
-    repetidas = preguntas_para_repasar(tema_seleccionado)
+    estadisticas = obtener_estadisticas_anki(request.user, tema_seleccionado)
+    repetidas = preguntas_para_repasar(request.user, tema_seleccionado)
 
     mensaje = None
     mostrar_explicacion = False
@@ -111,7 +111,7 @@ def anki_view(request):
         repeticion = repetidas.first()
     else:
         ya_registradas = Repeticion.objects.values_list('pregunta_id', flat=True)
-        nuevas = Pregunta.objects.exclude(id__in=ya_registradas)
+        nuevas = Pregunta.objects.filter(usuario=request.user).exclude(id__in=ya_registradas)
         if tema_seleccionado:
             nuevas = nuevas.filter(tema__nombre=tema_seleccionado)
         if nuevas.exists():

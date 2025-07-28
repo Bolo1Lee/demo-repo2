@@ -1,36 +1,35 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from generador.models import Pregunta, Tema
-from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
-
-
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 
 @login_required
 def lista_preguntas(request):
-    tema = request.GET.get("tema", "")
+    tema_id = request.GET.get("tema", "")
     q = request.GET.get("q", "")
 
-    preguntas = Pregunta.objects.all().select_related('tema')
+    preguntas = Pregunta.objects.filter(usuario=request.user).select_related('tema')
 
-    if tema:
-        preguntas = preguntas.filter(tema__nombre=tema)
+    if tema_id:
+        preguntas = preguntas.filter(tema_id=tema_id)
     if q:
         preguntas = preguntas.filter(pregunta__icontains=q)
 
-    temas = Tema.objects.all()
+    temas = Tema.objects.filter(usuario=request.user)
 
     return render(request, "lista_preguntas.html", {
         "preguntas": preguntas,
         "temas": temas,
-        "tema_seleccionado": tema,
+        "tema_filtrado": tema_id,
         "busqueda_actual": q
     })
 
 
+@login_required
 def editar_pregunta(request, pregunta_id):
-    pregunta = get_object_or_404(Pregunta, id=pregunta_id)
-    temas = Tema.objects.all()
+    pregunta = get_object_or_404(Pregunta, id=pregunta_id, usuario=request.user)
+    temas = Tema.objects.filter(usuario=request.user)
     errores = []
 
     if request.method == "POST":
@@ -73,8 +72,23 @@ def editar_pregunta(request, pregunta_id):
     })
 
 
+@login_required
 def eliminar_pregunta(request, pregunta_id):
     if request.method == "POST":
-        pregunta = get_object_or_404(Pregunta, id=pregunta_id)
+        pregunta = get_object_or_404(Pregunta, id=pregunta_id, usuario=request.user)
         pregunta.delete()
+    return redirect("lista_preguntas")
+
+
+@login_required
+@require_POST
+def eliminar_preguntas_multiples(request):
+    ids = request.POST.getlist("preguntas_seleccionadas")
+    if ids:
+        preguntas = Pregunta.objects.filter(id__in=ids, usuario=request.user)
+        eliminadas = preguntas.count()
+        preguntas.delete()
+        messages.success(request, f"Se eliminaron {eliminadas} preguntas.")
+    else:
+        messages.warning(request, "No seleccionaste ninguna pregunta.")
     return redirect("lista_preguntas")

@@ -4,9 +4,22 @@ from datetime import timedelta
 from django.contrib.auth.models import User
 
 class Tema(models.Model):
-    nombre = models.CharField(max_length=100, unique=True)
+    nombre = models.CharField(max_length=100)
+    padre = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        related_name='subtemas',
+        on_delete=models.CASCADE
+    )
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('nombre', 'usuario', 'padre')  # Evita duplicados por usuario
 
     def __str__(self):
+        if self.padre:
+            return f"{self.padre} > {self.nombre}"
         return self.nombre
 
 class Pregunta(models.Model):
@@ -18,6 +31,7 @@ class Pregunta(models.Model):
     respuesta_correcta = models.CharField(max_length=1)  # Solo A, B, C o D
     explicacion = models.TextField()
     tema = models.ForeignKey(Tema, on_delete=models.CASCADE, null=True, blank=True)
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.pregunta[:80] + "..."
@@ -43,17 +57,9 @@ class Repeticion(models.Model):
     lapses = models.IntegerField(default=0)
 
     def actualizar_repeticion(self, nivel):
-        """
-        nivel:
-            0 = incorrecta
-            1 = difícil
-            2 = bien
-            3 = fácil
-        """
         import math
         ahora = timezone.now()
 
-        # Parámetros FSRS simplificado
         alpha = 0.4
         beta = 0.3
         gamma = 0.05
@@ -61,25 +67,21 @@ class Repeticion(models.Model):
         theta = 1
         target_retrievability = 0.9
 
-        # Calcular t (días desde última revisión)
         if self.fecha_ultima_respuesta:
             t = (ahora - self.fecha_ultima_respuesta).days
-            t = max(t, 0.01)  # evitar división por cero
+            t = max(t, 0.01)
         else:
             t = 0.01
         r = math.exp(-theta * t / self.stability)
 
         if nivel == 0:
-            # Fallo
             self.stability *= (1 - beta * r * self.difficulty)
             self.difficulty = min(1.0, self.difficulty + delta * r)
             self.lapses += 1
         else:
-            # Acierto
             self.stability *= (1 + alpha * (1 - r) * (1 - self.difficulty))
             self.difficulty = max(0.0, self.difficulty - gamma * (1 - r))
 
-        # Nuevo intervalo
         self.interval = self.stability * math.log(1 / (1 - target_retrievability))
         self.proxima_repeticion = ahora + timedelta(days=self.interval)
 

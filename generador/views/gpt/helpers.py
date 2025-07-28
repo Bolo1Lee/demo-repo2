@@ -47,14 +47,15 @@ def es_pregunta_duplicada(nueva_pregunta, preguntas_existentes):
     return False
 
 
-def guardar_preguntas(preguntas, tema):
+def guardar_preguntas(preguntas, tema, usuario):
     """
-    Guarda las preguntas en la base de datos si no están repetidas y tienen al menos 4 alternativas.
+    Guarda las preguntas en la base de datos si no están repetidas,
+    tienen 4 alternativas y la respuesta correcta está bien definida como letra A-D.
     Devuelve una lista de preguntas guardadas y una lista de descartadas.
     """
     guardadas = []
     descartadas = []
-    existentes = Pregunta.objects.filter(tema=tema)
+    existentes = Pregunta.objects.filter(tema=tema, usuario=usuario)
 
     for item in preguntas:
         alternativas = item.get("alternativas", [])
@@ -76,13 +77,13 @@ def guardar_preguntas(preguntas, tema):
             descartadas.append({"razon": "Duplicada", "contenido": item})
             continue
 
-        # Calcular letra de la alternativa correcta
-        respuesta_texto = item.get("respuesta_correcta", "").strip()
-        if respuesta_texto in alternativas:
-            indice = alternativas.index(respuesta_texto)
-            letra_correcta = ["A", "B", "C", "D"][indice]
-        else:
-            letra_correcta = "A"  # fallback de seguridad
+        # Validar letra de la alternativa correcta
+        respuesta_texto = item.get("respuesta_correcta", "").strip().upper()
+        if respuesta_texto not in ["A", "B", "C", "D"]:
+            descartadas.append({"razon": "Respuesta incorrecta (no letra A-D)", "contenido": item})
+            continue
+
+        letra_correcta = respuesta_texto
 
         nueva = Pregunta(
             pregunta=enunciado,
@@ -92,14 +93,17 @@ def guardar_preguntas(preguntas, tema):
             alternativa_d=alternativas[3],
             respuesta_correcta=letra_correcta,
             explicacion=item.get("explicacion", ""),
-            tema=tema
+            tema=tema,
+            usuario=usuario  
         )
         nueva.save()
         guardadas.append(nueva)
 
     return guardadas, descartadas
 
-def generar_preguntas_y_guardar(texto, tipo, cantidad, tema_asociado, client, model, temperature, max_tokens):
+
+
+def generar_preguntas_y_guardar(texto, tipo, cantidad, tema_asociado, client, model, temperature, max_tokens, usuario):
     prompt = generar_prompt(texto_usuario=texto, tipo=tipo, cantidad=cantidad)
 
     completion = client.chat.completions.create(
@@ -112,8 +116,12 @@ def generar_preguntas_y_guardar(texto, tipo, cantidad, tema_asociado, client, mo
         max_tokens=max_tokens
     )
 
-    respuesta_raw = completion.choices[0].message.content
-    preguntas_limpias = limpiar_preguntas_json(respuesta_raw)  # ✅ no necesitas importar
-    preguntas_guardadas, _ = guardar_preguntas(preguntas_limpias, tema_asociado)  # ✅ tampoco
+    if not completion.choices or not completion.choices[0].message:
+        raise ValueError("No se recibió respuesta válida del modelo.")
 
-    return preguntas_guardadas, respuesta_raw
+    respuesta_raw = completion.choices[0].message.content
+    preguntas_limpias = limpiar_preguntas_json(respuesta_raw)
+    preguntas_guardadas, preguntas_descartadas = guardar_preguntas(preguntas_limpias, tema_asociado, usuario)
+    
+    return preguntas_guardadas, preguntas_descartadas, respuesta_raw
+

@@ -2,9 +2,12 @@ from django.utils import timezone
 from generador.models import Pregunta, Repeticion
 
 # Devuelve preguntas pendientes de revisar ordenadas por prioridad (más urgente primero)
-def preguntas_para_repasar(tema_nombre=None):
+def preguntas_para_repasar(usuario, tema_nombre=None):
     ahora = timezone.now()
-    repetidas = Repeticion.objects.filter(proxima_repeticion__lte=ahora)
+    repetidas = Repeticion.objects.filter(
+        proxima_repeticion__lte=ahora,
+        pregunta__usuario=usuario
+    )
     if tema_nombre:
         repetidas = repetidas.filter(pregunta__tema__nombre=tema_nombre)
     return repetidas.order_by('proxima_repeticion')
@@ -37,13 +40,13 @@ def responder_pregunta(pregunta_id, nivel_respuesta):
         return False
     
 
-def obtener_estadisticas_anki(tema_nombre=None):
+def obtener_estadisticas_anki(usuario, tema_nombre=None):
     ahora = timezone.now()
     hoy = ahora.date()
 
-    tarjetas_nuevas = Pregunta.objects.filter(repeticion__isnull=True)
-    tarjetas_repasar = Repeticion.objects.filter(proxima_repeticion__lte=ahora)
-    tarjetas_estudiadas_hoy = Repeticion.objects.filter(fecha_ultima_respuesta__date=hoy)
+    tarjetas_nuevas = Pregunta.objects.filter(usuario=usuario, repeticion__isnull=True)
+    tarjetas_repasar = Repeticion.objects.filter(pregunta__usuario=usuario, proxima_repeticion__lte=ahora)
+    tarjetas_estudiadas_hoy = Repeticion.objects.filter(pregunta__usuario=usuario, fecha_ultima_respuesta__date=hoy)
 
     if tema_nombre:
         tarjetas_nuevas = tarjetas_nuevas.filter(tema__nombre=tema_nombre)
@@ -55,3 +58,4 @@ def obtener_estadisticas_anki(tema_nombre=None):
         "tarjetas_para_repasar": tarjetas_repasar.count(),
         "total_estudiadas": tarjetas_estudiadas_hoy.count(),
     }
+

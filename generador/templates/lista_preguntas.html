@@ -3,19 +3,52 @@
 {% block title %}Lista de Preguntas{% endblock %}
 
 {% block content %}
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-      📚 Lista de Preguntas
-    </h1>
-    <a href="{% url 'home' %}" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded flex items-center gap-2 w-fit">
-      🏠 Volver al Inicio
-    </a>
+<div class="flex justify-between items-center mb-6">
+  <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+    📚 Lista de Preguntas
+  </h1>
+  <a href="{% url 'home' %}" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded flex items-center gap-2 w-fit">
+    🏠 Volver al Inicio
+  </a>
+</div>
+
+<!-- Filtro por tema -->
+<form method="GET" action="" class="mb-6">
+  <label for="tema" class="block mb-1 font-semibold text-gray-800 dark:text-gray-100">Filtrar por tema:</label>
+  <select name="tema" id="tema"
+    onchange="this.form.submit()"
+    class="w-full p-2 border rounded bg-white dark:bg-gray-800 dark:border-gray-700">
+    <option value="">-- Ver todos los temas --</option>
+    {% for t in temas %}
+      {% if t.padre %}
+        <option value="{{ t.id }}" {% if t.id|stringformat:"s" == tema_filtrado %}selected{% endif %}>
+          {{ t.padre.nombre }} > {{ t.nombre }}
+        </option>
+      {% else %}
+        <option value="{{ t.id }}" {% if t.id|stringformat:"s" == tema_filtrado %}selected{% endif %}>
+          {{ t.nombre }}
+        </option>
+      {% endif %}
+    {% endfor %}
+  </select>
+</form>
+
+<form method="post" action="{% url 'eliminar_preguntas_multiples' %}" onsubmit="return confirm('¿Estás seguro que deseas eliminar las preguntas seleccionadas?');">
+  {% csrf_token %}
+
+  <div class="mb-4">
+    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">
+      🗑️ Eliminar seleccionadas
+    </button>
   </div>
 
   <div class="overflow-x-auto">
     <table class="w-full border-collapse bg-white dark:bg-gray-800 rounded shadow">
       <thead>
         <tr class="bg-blue-600 text-white">
+          <th class="px-4 py-3 text-left">
+            <input type="checkbox" id="seleccionar-todo" onclick="toggleSeleccionarTodo(this)">
+          </th>
           <th class="px-4 py-3 text-left">Pregunta</th>
           <th class="px-4 py-3 text-left">Alternativas</th>
           <th class="px-4 py-3 text-left">Respuesta</th>
@@ -27,6 +60,9 @@
       <tbody>
         {% for pregunta in preguntas %}
           <tr class="border-b dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700">
+            <td class="px-4 py-3">
+              <input type="checkbox" name="preguntas_seleccionadas" value="{{ pregunta.id }}">
+            </td>
             <td class="px-4 py-3">{{ pregunta.pregunta }}</td>
             <td class="px-4 py-3">
               <strong>A:</strong> {{ pregunta.alternativa_a }}<br>
@@ -36,25 +72,42 @@
             </td>
             <td class="px-4 py-3 font-bold">{{ pregunta.respuesta_correcta }}</td>
             <td class="px-4 py-3">{{ pregunta.explicacion }}</td>
-            <td class="px-4 py-3">{{ pregunta.tema.nombre }}</td>
             <td class="px-4 py-3">
-              <div class="flex gap-2 flex-wrap">
-                <a href="{% url 'editar_pregunta' pregunta.id %}">
-                  <button class="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-2 rounded">✏️ Editar</button>
-                </a>
-                <form action="{% url 'eliminar_pregunta' pregunta.id %}" method="post" onsubmit="return confirm('¿Estás seguro que deseas eliminar esta pregunta?');">
-                  {% csrf_token %}
-                  <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded">🗑️ Eliminar</button>
-                </form>
-              </div>
+              {% if pregunta.tema.padre %}
+                {{ pregunta.tema.padre.nombre }} > {{ pregunta.tema.nombre }}
+              {% else %}
+                {{ pregunta.tema.nombre }}
+              {% endif %}
             </td>
+            <td class="px-4 py-3">
+  <div class="flex gap-2 flex-wrap">
+    <a href="{% url 'editar_pregunta' pregunta.id %}"
+       class="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-2 rounded inline-block text-center">
+      ✏️ Editar
+    </a>
+    <form action="{% url 'eliminar_pregunta' pregunta.id %}" method="post"
+          onsubmit="return confirm('¿Estás seguro que deseas eliminar esta pregunta?');">
+      {% csrf_token %}
+      <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded">🗑️</button>
+    </form>
+  </div>
+</td>
+
           </tr>
         {% empty %}
           <tr>
-            <td colspan="6" class="text-center text-gray-500 dark:text-gray-300 py-4">No hay preguntas guardadas.</td>
+            <td colspan="7" class="text-center text-gray-500 dark:text-gray-300 py-4">No hay preguntas guardadas.</td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
+</form>
+
+<script>
+  function toggleSeleccionarTodo(checkbox) {
+    const checkboxes = document.querySelectorAll('input[name="preguntas_seleccionadas"]');
+    checkboxes.forEach(cb => cb.checked = checkbox.checked);
+  }
+</script>
 {% endblock %}

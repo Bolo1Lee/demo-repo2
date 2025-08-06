@@ -47,20 +47,29 @@ def pregunta_chatgpt(request):
         tema_existente = request.POST.get("tema_existente")
         tema_nuevo = request.POST.get("tema_nuevo", "").strip()
         tema_padre_id = request.POST.get("tema_padre")
+        tema_padre_nuevo = request.POST.get("tema_padre_nuevo", "").strip()
         tipo = request.POST.get("tipo", "clinica")
         cantidad = int(request.POST.get("cantidad", 5))
         if cantidad > 20:
             cantidad = 20  # límite de seguridad
 
+        # Asociar tema padre
+        tema_padre = None
+        if tema_padre_nuevo:
+            tema_padre, _ = Tema.objects.get_or_create(nombre=tema_padre_nuevo, usuario=request.user)
+        elif tema_padre_id:
+            tema_padre = Tema.objects.filter(id=tema_padre_id, usuario=request.user).first()
+
         # Asociar tema
         tema_asociado = None
         if tema_nuevo:
-            tema_padre = Tema.objects.filter(id=tema_padre_id, usuario=request.user).first() if tema_padre_id else None
             tema_asociado, _ = Tema.objects.get_or_create(
                 nombre=tema_nuevo,
                 usuario=request.user,
                 padre=tema_padre
             )
+        elif tema_padre_nuevo and tema_padre:
+            tema_asociado = tema_padre
         elif tema_existente:
             tema_asociado = Tema.objects.filter(id=tema_existente, usuario=request.user).first()
 
@@ -102,7 +111,32 @@ def pregunta_desde_documento(request):
     # Temas visibles para el usuario
     temas_disponibles = Tema.objects.filter(usuario=request.user)
 
-    tema_asociado = Tema.objects.filter(id=tema_id, usuario=request.user).first() if tema_id else None
+    tema_existente = request.POST.get("tema_existente")
+    tema_nuevo = request.POST.get("tema_nuevo", "").strip()
+    tema_padre_id = request.POST.get("tema_padre")
+    tema_padre_nuevo = request.POST.get("tema_padre_nuevo", "").strip()
+
+    # Asociar tema padre
+    tema_padre = None
+    if tema_padre_nuevo:
+        tema_padre, _ = Tema.objects.get_or_create(nombre=tema_padre_nuevo, usuario=request.user)
+    elif tema_padre_id:
+        tema_padre = Tema.objects.filter(id=tema_padre_id, usuario=request.user).first()
+
+    # Asociar tema
+    tema_asociado = None
+    if tema_nuevo:
+        tema_asociado, _ = Tema.objects.get_or_create(
+            nombre=tema_nuevo,
+            usuario=request.user,
+            padre=tema_padre
+        )
+    elif tema_padre_nuevo and tema_padre:
+        tema_asociado = tema_padre
+    elif tema_existente:
+        tema_asociado = Tema.objects.filter(id=tema_existente, usuario=request.user).first()
+    elif tema_id:
+        tema_asociado = Tema.objects.filter(id=tema_id, usuario=request.user).first()
 
     if not texto or not tema_asociado:
         return render(request, "formulario.html", {
@@ -130,7 +164,7 @@ def pregunta_desde_documento(request):
         "preguntas_descartadas": preguntas_descartadas,
         "error_json": error_json,
         "temas": temas_disponibles,
-        "tema_seleccionado_id": tema_id or "",
+        "tema_seleccionado_id": tema_asociado.id if tema_asociado else "",
         "texto_usuario": texto,
         "tipo_seleccionado": tipo,
         "cantidad_seleccionada": cantidad,

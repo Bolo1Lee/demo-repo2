@@ -5,22 +5,24 @@
 {% block content %}
 <div class="max-w-4xl mx-auto p-6">
   <!-- Título y botón de regreso -->
-<div class="flex justify-between items-center mb-6">
-  <h1 class="text-2xl font-bold text-gray-900 dark:text-white">📄 Subir Documento para Generar Preguntas</h1>
-  <a href="{% url 'home' %}" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded flex items-center gap-2 w-fit">
-    🏠 Volver al Inicio
-  </a>
-</div>
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">📄 Subir Documento para Generar Preguntas</h1>
+    <a href="{% url 'home' %}" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded flex items-center gap-2 w-fit">
+      🏠 Volver al Inicio
+    </a>
+  </div>
 
   <form method="POST" enctype="multipart/form-data" class="space-y-6" onsubmit="mostrarLoader()">
     {% csrf_token %}
 
+    <!-- Archivo -->
     <div>
       <label for="archivo" class="block font-semibold mb-1">Selecciona un archivo (.pdf, .ppt, .pptx o .txt):</label>
       <input type="file" name="archivo" id="archivo" accept=".pdf,.ppt,.pptx,.txt"
         class="w-full p-2 border rounded bg-white dark:bg-gray-800 dark:border-gray-700" required />
     </div>
 
+    <!-- Seleccionar tema existente -->
     <div>
       <label for="tema_existente" class="block font-semibold mb-1">Seleccionar tema:</label>
       <select name="tema_existente" id="tema_existente"
@@ -36,34 +38,41 @@
       </select>
     </div>
 
-    <!-- Crear nuevo tema o subtema -->
-<div class="border p-4 rounded bg-gray-50 dark:bg-gray-900 dark:border-gray-700">
-  <h2 class="font-bold text-gray-800 dark:text-gray-100 mb-2">➕ Crear nuevo tema o subtema</h2>
+    <!-- Crear nuevo tema y subtema -->
+    <div class="border p-4 rounded bg-gray-50 dark:bg-gray-900 dark:border-gray-700">
+      <h2 class="font-bold text-gray-800 dark:text-gray-100 mb-2">➕ Crear nuevo tema y/o subtema</h2>
 
-  <!-- Nombre del nuevo tema -->
-  <div class="mb-4">
-    <label for="tema_nuevo" class="block font-semibold mb-1">Nombre del nuevo tema:</label>
-    <input type="text" name="tema_nuevo" id="tema_nuevo" placeholder="Ej: IAM, Sd meníngeo..."
-      class="w-full p-2 border rounded bg-white dark:bg-gray-800 dark:border-gray-700" />
-  </div>
+      <!-- Nuevo tema principal -->
+      <div class="mb-4">
+        <label for="tema_padre_nuevo" class="block font-semibold mb-1">Nuevo tema principal:</label>
+        <input type="text" name="tema_padre_nuevo" id="tema_padre_nuevo" placeholder="Ej: Medicina de Urgencias"
+          class="w-full p-2 border rounded bg-white dark:bg-gray-800 dark:border-gray-700" />
+      </div>
 
-  <!-- Tema padre opcional -->
-  <div>
-    <label for="tema_padre" class="block font-semibold mb-1">
-      Tema padre (opcional):
-      <span class="text-sm text-gray-500 dark:text-gray-400">(Si seleccionas uno, se creará como subtema)</span>
-    </label>
-    <select name="tema_padre" id="tema_padre"
-      class="w-full p-2 border rounded bg-white dark:bg-gray-800 dark:border-gray-700">
-      <option value="">-- Sin padre (tema principal) --</option>
-      {% for t in temas %}
-        <option value="{{ t.id }}">{{ t.nombre }}</option>
-      {% endfor %}
-    </select>
-  </div>
-</div>
+      <!-- Subtema -->
+      <div class="mb-4">
+        <label for="tema_nuevo" class="block font-semibold mb-1">Nuevo subtema:</label>
+        <input type="text" name="tema_nuevo" id="tema_nuevo" placeholder="Ej: Estratificación de riesgo"
+          class="w-full p-2 border rounded bg-white dark:bg-gray-800 dark:border-gray-700" />
+      </div>
 
+      <!-- O seleccionar tema padre existente -->
+      <div>
+        <label for="tema_padre" class="block font-semibold mb-1">
+          Tema padre (opcional):
+          <span class="text-sm text-gray-500 dark:text-gray-400">(Si seleccionas uno, se creará como subtema)</span>
+        </label>
+        <select name="tema_padre" id="tema_padre"
+          class="w-full p-2 border rounded bg-white dark:bg-gray-800 dark:border-gray-700">
+          <option value="">-- Sin padre / tema principal --</option>
+          {% for t in temas %}
+            <option value="{{ t.id }}">{{ t.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
 
+    <!-- Tipo de pregunta -->
     <div>
       <label for="tipo" class="block font-semibold mb-1">Tipo de pregunta:</label>
       <select name="tipo" id="tipo"
@@ -73,6 +82,7 @@
       </select>
     </div>
 
+    <!-- Cantidad -->
     <div>
       <label for="cantidad" class="block font-semibold mb-1">Cantidad de preguntas:</label>
       <select name="cantidad" id="cantidad"
@@ -82,6 +92,7 @@
       </select>
     </div>
 
+    <!-- Botón -->
     <div class="flex items-center gap-4">
       <button type="submit"
         class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded shadow">

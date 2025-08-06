@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-b8livuxvm6qgpj!ovw8=$kb*$zmj05&forsv57ndu4h%+kjc0y
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["0.0.0.0", "www.qeassy.com", "localhost"]
+ALLOWED_HOSTS = ["0.0.0.0", "www.qeassy.com", "localhost", '127.0.0.1']
 CSRF_TRUSTED_ORIGINS = ["https://www.qeassy.com", ]
 
 # Application definition

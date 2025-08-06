@@ -1,13 +1,19 @@
 {% extends "base.html" %}
 {% load custom_tags %}
+{% load tz %}
 
-{% block title %}Modo Práctica{% endblock %}
+{% block title %}Modo Intensivo{% endblock %}
 
 {% block content %}
 <div class="flex justify-between items-center mb-6">
-  <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Modo Práctica</h1>
+  <h1 class="text-2xl font-bold text-red-600 dark:text-red-400">🔥 Modo Intensivo</h1>
   <a href="{% url 'home' %}" class="bg-green-500 text-white px-4 py-2 rounded">🏠 Inicio</a>
 </div>
+
+<p class="text-sm text-gray-700 dark:text-gray-300 mb-4">
+  Estás en el <strong>modo intensivo de ultra repetición</strong>, ideal para preparar pruebas con alto volumen de contenido.
+  Las preguntas se repetirán cada 10 min, 30 min, 1 h o 6 h dependiendo de tu nivel de seguridad.
+</p>
 
 <form method="GET" action="" class="mb-6">
   <label for="tema" class="block mb-1 text-gray-900 dark:text-white">Selecciona un tema:</label>
@@ -33,6 +39,7 @@
 
 {% if repeticion %}
 <div class="bg-white dark:bg-gray-800 text-gray-900 dark:text-white p-6 rounded-xl shadow max-w-2xl mx-auto">
+
   <form method="POST">
     {% csrf_token %}
     <input type="hidden" name="pregunta_id" value="{{ repeticion.pregunta.id }}">
@@ -79,8 +86,8 @@
         <div class="boton-dificultad">
           <button name="nivel" value="{{ nivel }}" class="{{ clase }} text-white px-3 py-2 rounded w-full">{{ texto }}</button>
           <div class="respuesta-fsrs-preview text-sm mt-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white p-2 rounded">
-            🕒 Se repetirá en {{ fsrs_preview|dict_key:nivel|dict_key:"intervalo" }} días<br>
-            📅 ({{ fsrs_preview|dict_key:nivel|dict_key:"fecha"|date:"l d M, H:i" }})
+            🕒 Se repetirá en {{ repeticion_preview|dict_key:nivel|dict_key:"intervalo" }}<br>
+            📅 ({{ repeticion_preview|dict_key:nivel|dict_key:"fecha"|localtime|date:"H:i" }})
           </div>
         </div>
         {% endfor %}
